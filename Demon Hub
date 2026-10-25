@@ -1,294 +1,342 @@
 
 -- DEMON HUB | DARK EDITION
--- Interface mobile/PC com FOV visual e configurações
--- Não implementa cheats de aimbot ou ESP.
+-- Interface visual mobile / PC
+-- Controles de interface; sem aimbot ou ESP funcional.
 
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-
 local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+local pg = player:WaitForChild("PlayerGui")
 
-local old = playerGui:FindFirstChild("DemonHub")
-if old then old:Destroy() end
+local previous = pg:FindFirstChild("DemonHub")
+if previous then previous:Destroy() end
 
-local settings = {
-    Aimbot = true,
-    PlayerESP = true,
-    NPCESP = true,
-    NameESP = true,
-    HealthESP = true,
-    DistanceESP = true,
-    NoGlass = true,
-    Fullbright = true,
-    FOV = 120,
-    Smoothness = 5,
-    Transparency = 50,
-    ESPDistance = 1200,
-    TextSize = 11,
+local C = {
+    bg = Color3.fromRGB(7, 7, 11),
+    panel = Color3.fromRGB(13, 13, 18),
+    row = Color3.fromRGB(17, 17, 23),
+    red = Color3.fromRGB(255, 20, 62),
+    white = Color3.fromRGB(240, 240, 248),
+    muted = Color3.fromRGB(160, 160, 175),
+    off = Color3.fromRGB(48, 49, 62)
 }
 
-local RED = Color3.fromRGB(255, 20, 65)
-local DARK = Color3.fromRGB(10, 10, 14)
-local PANEL = Color3.fromRGB(18, 18, 24)
-local WHITE = Color3.fromRGB(240, 240, 248)
-local MUTED = Color3.fromRGB(155, 155, 170)
+local cfg = {
+    Aimbot = true, VisibleCheck = true, TeamCheck = true,
+    NoGlass = true, Fullbright = true,
+    PlayerESP = true, NameTag = true, HealthBar = true,
+    DistanceESP = true, Skeleton = true, BoxESP = true,
+    Chams = true, WeaponESP = true,
+    Dozer = true, Whisper = true, Morte = true,
+    Helicopter = true, OtherNPCs = true, NPCAimbot = true,
+    DroppedItems = true, Corpse = true, Container = true,
+    ExitESP = true, QuestItem = true, Vehicle = true,
+    AIChams = true, ShowFPS = true, Crosshair = true,
+    MobileButton = true,
+    FOV = 120, Smoothness = 5, Radius = 300,
+    MaxDistance = 1200, Transparency = 50,
+    TextSize = 11, UIScale = 100
+}
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "DemonHub"
 gui.ResetOnSpawn = false
-gui.DisplayOrder = 100
-gui.Parent = playerGui
+gui.IgnoreGuiInset = true
+gui.DisplayOrder = 999
+gui.Parent = pg
 
-local main = Instance.new("Frame")
-main.Name = "Main"
-main.Size = UDim2.new(0.88, 0, 0.76, 0)
-main.Position = UDim2.new(0.06, 0, 0.12, 0)
-main.BackgroundColor3 = DARK
-main.BorderSizePixel = 0
-main.Parent = gui
-
-local mainLimit = Instance.new("UISizeConstraint")
-mainLimit.MinSize = Vector2.new(300, 350)
-mainLimit.MaxSize = Vector2.new(900, 650)
-mainLimit.Parent = main
-
-local mainCorner = Instance.new("UICorner")
-mainCorner.CornerRadius = UDim.new(0, 12)
-mainCorner.Parent = main
-
-local outline = Instance.new("UIStroke")
-outline.Color = RED
-outline.Thickness = 1.5
-outline.Parent = main
-
--- Cabeçalho
-local header = Instance.new("Frame")
-header.Size = UDim2.new(1, 0, 0, 62)
-header.BackgroundColor3 = PANEL
-header.BorderSizePixel = 0
-header.Parent = main
-
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -110, 1, 0)
-title.Position = UDim2.new(0, 14, 0, 0)
-title.BackgroundTransparency = 1
-title.Text = "👹 DEMON HUB"
-title.TextColor3 = RED
-title.Font = Enum.Font.GothamBlack
-title.TextSize = 22
-title.TextXAlignment = Enum.TextXAlignment.Left
-title.Parent = header
-
-local close = Instance.new("TextButton")
-close.Size = UDim2.new(0, 38, 0, 38)
-close.Position = UDim2.new(1, -48, 0, 12)
-close.BackgroundColor3 = Color3.fromRGB(45, 12, 22)
-close.Text = "×"
-close.TextColor3 = RED
-close.TextSize = 27
-close.Font = Enum.Font.GothamBold
-close.Parent = header
-Instance.new("UICorner", close).CornerRadius = UDim.new(0, 8)
-
--- Abas
-local tabs = Instance.new("Frame")
-tabs.Position = UDim2.new(0, 10, 0, 70)
-tabs.Size = UDim2.new(1, -20, 0, 38)
-tabs.BackgroundTransparency = 1
-tabs.Parent = main
-
-local tabLayout = Instance.new("UIListLayout")
-tabLayout.FillDirection = Enum.FillDirection.Horizontal
-tabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-tabLayout.Padding = UDim.new(0, 6)
-tabLayout.Parent = tabs
-
-local content = Instance.new("ScrollingFrame")
-content.Position = UDim2.new(0, 10, 0, 116)
-content.Size = UDim2.new(1, -20, 1, -126)
-content.BackgroundColor3 = PANEL
-content.BorderSizePixel = 0
-content.ScrollBarThickness = 4
-content.ScrollBarImageColor3 = RED
-content.AutomaticCanvasSize = Enum.AutomaticSize.Y
-content.CanvasSize = UDim2.new()
-content.Parent = main
-Instance.new("UICorner", content).CornerRadius = UDim.new(0, 8)
-
-local layout = Instance.new("UIListLayout")
-layout.Padding = UDim.new(0, 6)
-layout.SortOrder = Enum.SortOrder.LayoutOrder
-layout.Parent = content
-
-local padding = Instance.new("UIPadding")
-padding.PaddingTop = UDim.new(0, 8)
-padding.PaddingLeft = UDim.new(0, 8)
-padding.PaddingRight = UDim.new(0, 8)
-padding.PaddingBottom = UDim.new(0, 8)
-padding.Parent = content
-
-local pages = {}
-local currentPage
-
-local function createPage(name)
-    local page = Instance.new("Frame")
-    page.Name = name
-    page.Size = UDim2.new(1, 0, 0, 0)
-    page.AutomaticSize = Enum.AutomaticSize.Y
-    page.BackgroundTransparency = 1
-    page.Visible = false
-    page.Parent = content
-
-    local list = Instance.new("UIListLayout")
-    list.Padding = UDim.new(0, 6)
-    list.SortOrder = Enum.SortOrder.LayoutOrder
-    list.Parent = page
-
-    pages[name] = page
-    return page
+local function new(class, props, parent)
+    local obj = Instance.new(class)
+    for k, v in pairs(props) do obj[k] = v end
+    obj.Parent = parent
+    return obj
 end
 
-local function switchTab(name)
-    currentPage = name
-    for n, page in pairs(pages) do
-        page.Visible = n == name
+local function corner(obj, radius)
+    new("UICorner", {
+        CornerRadius = UDim.new(0, radius)
+    }, obj)
+end
+
+local function stroke(obj, color, thickness)
+    return new("UIStroke", {
+        Color = color or C.red,
+        Thickness = thickness or 1
+    }, obj)
+end
+
+local main = new("Frame", {
+    Name = "Main",
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    Position = UDim2.fromScale(0.5, 0.5),
+    Size = UDim2.new(0.94, 0, 0.88, 0),
+    BackgroundColor3 = C.bg,
+    BorderSizePixel = 0
+}, gui)
+corner(main, 12)
+stroke(main, C.red, 1.5)
+
+new("UISizeConstraint", {
+    MinSize = Vector2.new(310, 360),
+    MaxSize = Vector2.new(1400, 950)
+}, main)
+
+-- Header
+local header = new("Frame", {
+    Size = UDim2.new(1, -2, 0, 68),
+    Position = UDim2.fromOffset(1, 1),
+    BackgroundColor3 = C.panel,
+    BorderSizePixel = 0
+}, main)
+
+new("TextLabel", {
+    Position = UDim2.fromOffset(14, 5),
+    Size = UDim2.new(1, -120, 0, 38),
+    BackgroundTransparency = 1,
+    Text = "👹 Demon Hub",
+    TextColor3 = C.red,
+    TextSize = 27,
+    Font = Enum.Font.GothamBlack,
+    TextXAlignment = Enum.TextXAlignment.Left
+}, header)
+
+new("TextLabel", {
+    Position = UDim2.fromOffset(17, 41),
+    Size = UDim2.new(1, -130, 0, 20),
+    BackgroundTransparency = 1,
+    Text = "PROJECT DELTA  |  DARK EDITION",
+    TextColor3 = C.muted,
+    TextSize = 10,
+    Font = Enum.Font.Gotham,
+    TextXAlignment = Enum.TextXAlignment.Left
+}, header)
+
+local minimize = new("TextButton", {
+    Position = UDim2.new(1, -91, 0, 12),
+    Size = UDim2.fromOffset(36, 36),
+    BackgroundColor3 = Color3.fromRGB(40, 10, 20),
+    Text = "−",
+    TextColor3 = C.red,
+    TextSize = 25,
+    Font = Enum.Font.GothamBold
+}, header)
+corner(minimize, 7)
+
+local close = new("TextButton", {
+    Position = UDim2.new(1, -47, 0, 12),
+    Size = UDim2.fromOffset(36, 36),
+    BackgroundColor3 = Color3.fromRGB(40, 10, 20),
+    Text = "×",
+    TextColor3 = C.red,
+    TextSize = 25,
+    Font = Enum.Font.GothamBold
+}, header)
+corner(close, 7)
+
+-- Tabs
+local tabBar = new("Frame", {
+    Position = UDim2.new(0, 8, 0, 75),
+    Size = UDim2.new(1, -16, 0, 36),
+    BackgroundTransparency = 1
+}, main)
+
+new("UIListLayout", {
+    FillDirection = Enum.FillDirection.Horizontal,
+    HorizontalAlignment = Enum.HorizontalAlignment.Center,
+    Padding = UDim.new(0, 6),
+    SortOrder = Enum.SortOrder.LayoutOrder
+}, tabBar)
+
+-- Three-column scrolling area
+local body = new("ScrollingFrame", {
+    Position = UDim2.new(0, 8, 0, 118),
+    Size = UDim2.new(1, -16, 1, -151),
+    BackgroundTransparency = 1,
+    BorderSizePixel = 0,
+    ScrollBarThickness = 4,
+    ScrollBarImageColor3 = C.red,
+    CanvasSize = UDim2.new(),
+    AutomaticCanvasSize = Enum.AutomaticSize.Y
+}, main)
+
+local columns = new("UIGridLayout", {
+    CellPadding = UDim2.fromOffset(8, 8),
+    CellSize = UDim2.new(0.333, -7, 0, 0),
+    SortOrder = Enum.SortOrder.LayoutOrder
+}, body)
+
+-- Automatic row height inside each column
+local colFrames = {}
+
+for i = 1, 3 do
+    local col = new("Frame", {
+        Name = "Column" .. i,
+        BackgroundTransparency = 1,
+        AutomaticSize = Enum.AutomaticSize.Y
+    }, body)
+
+    new("UIListLayout", {
+        Padding = UDim.new(0, 8),
+        SortOrder = Enum.SortOrder.LayoutOrder
+    }, col)
+
+    colFrames[i] = col
+end
+
+local function section(col, title)
+    local box = new("Frame", {
+        Size = UDim2.new(1, 0, 0, 35),
+        BackgroundColor3 = C.panel,
+        AutomaticSize = Enum.AutomaticSize.None
+    }, col)
+    corner(box, 6)
+    stroke(box, C.red, 1)
+
+    new("TextLabel", {
+        Position = UDim2.fromOffset(10, 0),
+        Size = UDim2.new(1, -18, 1, 0),
+        BackgroundTransparency = 1,
+        Text = title,
+        TextColor3 = C.red,
+        TextSize = 14,
+        Font = Enum.Font.GothamBold,
+        TextXAlignment = Enum.TextXAlignment.Left
+    }, box)
+
+    local contents = new("Frame", {
+        Position = UDim2.fromOffset(6, 41),
+        Size = UDim2.new(1, -12, 0, 0),
+        BackgroundColor3 = C.panel,
+        AutomaticSize = Enum.AutomaticSize.Y
+    }, box)
+    corner(contents, 7)
+    stroke(contents, Color3.fromRGB(70, 22, 35), 0.7)
+
+    local list = new("UIListLayout", {
+        Padding = UDim.new(0, 0),
+        SortOrder = Enum.SortOrder.LayoutOrder
+    }, contents)
+
+    new("UIPadding", {
+        PaddingTop = UDim.new(0, 3),
+        PaddingBottom = UDim.new(0, 3),
+        PaddingLeft = UDim.new(0, 4),
+        PaddingRight = UDim.new(0, 4)
+    }, contents)
+
+    local function resize()
+        box.Size = UDim2.new(1, 0, 0, contents.AbsoluteSize.Y + 47)
     end
+    contents:GetPropertyChangedSignal("AbsoluteSize"):Connect(resize)
+    task.defer(resize)
+
+    return contents
 end
 
-local function makeTab(name)
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0, 95, 1, 0)
-    button.BackgroundColor3 = PANEL
-    button.Text = name
-    button.TextColor3 = WHITE
-    button.TextSize = 13
-    button.Font = Enum.Font.GothamBold
-    button.Parent = tabs
-    Instance.new("UICorner", button).CornerRadius = UDim.new(0, 6)
+local function toggle(parent, text, key)
+    local row = new("TextButton", {
+        Size = UDim2.new(1, 0, 0, 35),
+        BackgroundColor3 = C.panel,
+        BorderSizePixel = 0,
+        Text = "",
+        AutoButtonColor = true
+    }, parent)
 
-    button.Activated:Connect(function()
-        switchTab(name)
-    end)
-end
+    new("TextLabel", {
+        Position = UDim2.fromOffset(7, 0),
+        Size = UDim2.new(1, -62, 1, 0),
+        BackgroundTransparency = 1,
+        Text = text,
+        TextColor3 = C.white,
+        TextSize = 12,
+        Font = Enum.Font.Gotham,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextTruncate = Enum.TextTruncate.AtEnd
+    }, row)
 
-local function section(page, name)
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 0, 30)
-    label.BackgroundColor3 = Color3.fromRGB(35, 12, 21)
-    label.Text = "  " .. name
-    label.TextColor3 = RED
-    label.TextSize = 14
-    label.Font = Enum.Font.GothamBold
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = page
-    Instance.new("UICorner", label).CornerRadius = UDim.new(0, 5)
-end
+    local pill = new("Frame", {
+        AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -5, 0.5, 0),
+        Size = UDim2.fromOffset(38, 21),
+        BackgroundColor3 = C.off
+    }, row)
+    corner(pill, 20)
 
-local function toggle(page, labelText, key)
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(1, 0, 0, 38)
-    button.BackgroundColor3 = DARK
-    button.Text = ""
-    button.Parent = page
-    Instance.new("UICorner", button).CornerRadius = UDim.new(0, 5)
+    local dot = new("Frame", {
+        Position = UDim2.fromOffset(3, 3),
+        Size = UDim2.fromOffset(15, 15),
+        BackgroundColor3 = C.white
+    }, pill)
+    corner(dot, 20)
 
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, -65, 1, 0)
-    label.Position = UDim2.new(0, 10, 0, 0)
-    label.BackgroundTransparency = 1
-    label.Text = labelText
-    label.TextColor3 = WHITE
-    label.TextSize = 13
-    label.Font = Enum.Font.Gotham
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = button
-
-    local state = Instance.new("TextLabel")
-    state.Size = UDim2.new(0, 42, 0, 23)
-    state.Position = UDim2.new(1, -50, 0.5, -11)
-    state.BorderSizePixel = 0
-    state.Text = ""
-    state.Parent = button
-    Instance.new("UICorner", state).CornerRadius = UDim.new(1, 0)
-
-    local dot = Instance.new("Frame")
-    dot.Size = UDim2.new(0, 17, 0, 17)
-    dot.Position = UDim2.new(0, 3, 0.5, -8)
-    dot.BackgroundColor3 = WHITE
-    dot.Parent = state
-    Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
-
-    local function update()
-        state.BackgroundColor3 =
-            settings[key] and RED or Color3.fromRGB(55, 55, 68)
-        dot.Position = settings[key]
-            and UDim2.new(1, -20, 0.5, -8)
-            or UDim2.new(0, 3, 0.5, -8)
+    local function refresh()
+        pill.BackgroundColor3 = cfg[key] and C.red or C.off
+        dot.Position = cfg[key]
+            and UDim2.new(1, -18, 0, 3)
+            or UDim2.fromOffset(3, 3)
     end
 
-    button.Activated:Connect(function()
-        settings[key] = not settings[key]
-        update()
+    row.Activated:Connect(function()
+        cfg[key] = not cfg[key]
+        refresh()
     end)
-
-    update()
+    refresh()
 end
 
-local function slider(page, labelText, key, minimum, maximum)
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 0, 62)
-    frame.BackgroundColor3 = DARK
-    frame.Parent = page
-    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 5)
+local function slider(parent, text, key, min, max)
+    local row = new("Frame", {
+        Size = UDim2.new(1, 0, 0, 58),
+        BackgroundColor3 = C.panel
+    }, parent)
 
-    local label = Instance.new("TextLabel")
-    label.Position = UDim2.new(0, 9, 0, 3)
-    label.Size = UDim2.new(1, -18, 0, 23)
-    label.BackgroundTransparency = 1
-    label.TextColor3 = WHITE
-    label.TextSize = 13
-    label.Font = Enum.Font.Gotham
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = frame
+    local label = new("TextLabel", {
+        Position = UDim2.fromOffset(7, 2),
+        Size = UDim2.new(1, -14, 0, 21),
+        BackgroundTransparency = 1,
+        TextColor3 = C.white,
+        TextSize = 12,
+        Font = Enum.Font.Gotham,
+        TextXAlignment = Enum.TextXAlignment.Left
+    }, row)
 
-    local track = Instance.new("TextButton")
-    track.Position = UDim2.new(0, 10, 0, 36)
-    track.Size = UDim2.new(1, -20, 0, 14)
-    track.BackgroundColor3 = Color3.fromRGB(55, 35, 43)
-    track.Text = ""
-    track.Parent = frame
-    Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
+    local track = new("TextButton", {
+        Position = UDim2.new(0, 7, 0, 32),
+        Size = UDim2.new(1, -14, 0, 13),
+        BackgroundColor3 = Color3.fromRGB(55, 35, 43),
+        Text = "",
+        AutoButtonColor = true
+    }, row)
+    corner(track, 10)
 
-    local fill = Instance.new("Frame")
-    fill.BackgroundColor3 = RED
-    fill.BorderSizePixel = 0
-    fill.Parent = track
-    Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
+    local fill = new("Frame", {
+        Size = UDim2.new(0.5, 0, 1, 0),
+        BackgroundColor3 = C.red
+    }, track)
+    corner(fill, 10)
 
-    local dragging = false
+    local dragging = true
 
-    local function setValue(x)
+    local function setFromX(x)
         local ratio = math.clamp(
-            (x - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1
+            (x - track.AbsolutePosition.X) /
+            math.max(track.AbsoluteSize.X, 1), 0, 1
         )
-        settings[key] = math.floor(minimum + ratio * (maximum - minimum) + 0.5)
+        cfg[key] = math.floor(min + ratio * (max - min) + 0.5)
         fill.Size = UDim2.new(ratio, 0, 1, 0)
-        label.Text = labelText .. ": " .. settings[key]
+        label.Text = text .. ": " .. cfg[key]
     end
 
-    local function update()
-        local ratio = (settings[key] - minimum) / (maximum - minimum)
+    local function refresh()
+        local ratio = (cfg[key] - min) / (max - min)
         fill.Size = UDim2.new(ratio, 0, 1, 0)
-        label.Text = labelText .. ": " .. settings[key]
+        label.Text = text .. ": " .. cfg[key]
     end
 
     track.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
-            or input.UserInputType == Enum.UserInputType.Touch then
+        or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
-            setValue(input.Position.X)
+            setFromX(input.Position.X)
         end
     end)
 
@@ -297,125 +345,116 @@ local function slider(page, labelText, key, minimum, maximum)
             input.UserInputType == Enum.UserInputType.MouseMovement
             or input.UserInputType == Enum.UserInputType.Touch
         ) then
-            setValue(input.Position.X)
+            setFromX(input.Position.X)
         end
     end)
 
     UIS.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
-            or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
         end
     end)
 
-    update()
+    refresh()
 end
 
--- Páginas e controles
-local aim = createPage("Aimbot")
-local esp = createPage("ESP")
-local visual = createPage("Visual")
-local config = createPage("Settings")
-
-makeTab("Aimbot")
-makeTab("ESP")
-makeTab("Visual")
-makeTab("Settings")
-
-section(aim, "FOV VISUAL")
-slider(aim, "FOV Size", "FOV", 30, 300)
-slider(aim, "FOV Transparency", "Transparency", 0, 100)
-section(aim, "AIM SETTINGS")
-toggle(aim, "Aimbot (visual setting only)", "Aimbot")
+-- Column 1: Aimbot + Visual
+local aim = section(colFrames[1], "⊕  Aimbot")
+toggle(aim, "Aimbot", "Aimbot")
+slider(aim, "Aimbot FOV", "FOV", 30, 300)
 slider(aim, "Smoothness", "Smoothness", 1, 20)
+slider(aim, "Aimbot Radius", "Radius", 50, 500)
+toggle(aim, "Visible Check", "VisibleCheck")
+toggle(aim, "Team Check", "TeamCheck")
 
-section(esp, "PLAYER ESP SETTINGS")
-toggle(esp, "Player ESP (setting only)", "PlayerESP")
-toggle(esp, "Name Tags", "NameESP")
-toggle(esp, "Health Bar", "HealthESP")
-toggle(esp, "Distance", "DistanceESP")
-slider(esp, "Max Distance", "ESPDistance", 100, 1200)
+local vis = section(colFrames[1], "◉  Visual")
+toggle(vis, "No Glass", "NoGlass")
+toggle(vis, "Fullbright", "Fullbright")
 
-section(esp, "NPC ESP SETTINGS")
-toggle(esp, "NPC ESP (setting only)", "NPCESP")
+-- Column 2: Player ESP + Other ESP
+local esp = section(colFrames[2], "◉  Player ESP")
+toggle(esp, "Player ESP", "PlayerESP")
+toggle(esp, "NameTag ESP", "NameTag")
+toggle(esp, "Health Bar ESP", "HealthBar")
+toggle(esp, "Distance ESP", "DistanceESP")
+slider(esp, "Max Distance", "MaxDistance", 100, 1200)
+toggle(esp, "Skeleton ESP", "Skeleton")
+toggle(esp, "Box ESP", "BoxESP")
+toggle(esp, "Chams", "Chams")
+toggle(esp, "Active Weapon ESP", "WeaponESP")
 
-section(visual, "VISUAL OPTIONS")
-toggle(visual, "No Glass (setting only)", "NoGlass")
-toggle(visual, "Fullbright (setting only)", "Fullbright")
+local other = section(colFrames[2], "◇  Other ESP")
+toggle(other, "Dropped Items ESP", "DroppedItems")
+toggle(other, "Corpse ESP", "Corpse")
+toggle(other, "Container ESP", "Container")
+toggle(other, "Exit ESP", "ExitESP")
+toggle(other, "Quest Item ESP", "QuestItem")
+toggle(other, "Vehicle ESP", "Vehicle")
+toggle(other, "AI Chams / Nametag", "AIChams")
 
-section(config, "INTERFACE SETTINGS")
-slider(config, "ESP Text Size", "TextSize", 8, 24)
+-- Column 3: NPC ESP + Settings
+local npc = section(colFrames[3], "☠  NPC ESP")
+toggle(npc, "Dozer ESP", "Dozer")
+toggle(npc, "Whisper ESP", "Whisper")
+toggle(npc, "Morte ESP", "Morte")
+toggle(npc, "Helicopter ESP", "Helicopter")
+toggle(npc, "Other NPCs ESP", "OtherNPCs")
+toggle(npc, "NPC Aimbot", "NPCAimbot")
 
-local info = Instance.new("TextLabel")
-info.Size = UDim2.new(1, 0, 0, 48)
-info.BackgroundTransparency = 1
-info.TextWrapped = true
-info.Text = "Demon Hub | Configurações visuais da sessão"
-info.TextColor3 = MUTED
-info.TextSize = 12
-info.Font = Enum.Font.Gotham
-info.Parent = config
+local settings = section(colFrames[3], "⚙  Settings")
+slider(settings, "FOV Transparency", "Transparency", 0, 100)
+slider(settings, "ESP Text Size", "TextSize", 8, 24)
+slider(settings, "UI Scale", "UIScale", 70, 120)
+toggle(settings, "Show FPS", "ShowFPS")
+toggle(settings, "Crosshair", "Crosshair")
+toggle(settings, "Mobile Button", "MobileButton")
 
-switchTab("Aimbot")
+-- FOV visual only
+local fov = new("Frame", {
+    Name = "FOVCircle",
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    Position = UDim2.fromScale(0.5, 0.5),
+    Size = UDim2.fromOffset(cfg.FOV * 2, cfg.FOV * 2),
+    BackgroundTransparency = 1
+}, gui)
+corner(fov, 999)
+local fovStroke = stroke(fov, C.red, 1.5)
 
--- Círculo FOV visual
-local circle = Instance.new("Frame")
-circle.Name = "FOVCircle"
-circle.AnchorPoint = Vector2.new(0.5, 0.5)
-circle.Position = UDim2.new(0.5, 0, 0.5, 0)
-circle.Size = UDim2.new(0, settings.FOV * 2, 0, settings.FOV * 2)
-circle.BackgroundTransparency = 1
-circle.Parent = gui
+-- Floating mobile reopen button
+local mobile = new("TextButton", {
+    Name = "DemonMobileButton",
+    AnchorPoint = Vector2.new(1, 0.5),
+    Position = UDim2.new(1, -18, 0.7, 0),
+    Size = UDim2.fromOffset(58, 58),
+    BackgroundColor3 = C.bg,
+    Text = "👹",
+    TextSize = 26,
+    Visible = UIS.TouchEnabled
+}, gui)
+corner(mobile, 99)
+stroke(mobile, C.red, 2)
 
-local circleCorner = Instance.new("UICorner")
-circleCorner.CornerRadius = UDim.new(1, 0)
-circleCorner.Parent = circle
-
-local circleStroke = Instance.new("UIStroke")
-circleStroke.Color = RED
-circleStroke.Thickness = 1.5
-circleStroke.Parent = circle
-
-local function updateCircle()
-    circle.Size = UDim2.fromOffset(settings.FOV * 2, settings.FOV * 2)
-    circleStroke.Transparency = settings.Transparency / 100
-end
-
-RunService.RenderStepped:Connect(updateCircle)
-
--- Minimizar/reabrir: botão mobile e RightShift no PC
-local minimized = false
-
-local mobileButton = Instance.new("TextButton")
-mobileButton.Name = "DemonMobileButton"
-mobileButton.Size = UDim2.fromOffset(58, 58)
-mobileButton.Position = UDim2.new(1, -75, 0.72, 0)
-mobileButton.BackgroundColor3 = DARK
-mobileButton.Text = "👹"
-mobileButton.TextSize = 27
-mobileButton.Parent = gui
-mobileButton.Visible = UIS.TouchEnabled
-Instance.new("UICorner", mobileButton).CornerRadius = UDim.new(1, 0)
-
-local mobileStroke = Instance.new("UIStroke")
-mobileStroke.Color = RED
-mobileStroke.Thickness = 2
-mobileStroke.Parent = mobileButton
+local minimized = true
 
 local function setMinimized(value)
     minimized = value
-    main.Visible = not minimized
-    circle.Visible = not minimized
-    mobileButton.Visible = UIS.TouchEnabled
-        and (minimized or not minimized)
+    main.Visible = not value
+    fov.Visible = not value
+    mobile.Visible = UIS.TouchEnabled
+        and (cfg.MobileButton or value)
 end
 
-mobileButton.Activated:Connect(function()
-    setMinimized(not minimized)
+minimize.Activated:Connect(function()
+    setMinimized(true)
 end)
 
 close.Activated:Connect(function()
     setMinimized(true)
+end)
+
+mobile.Activated:Connect(function()
+    setMinimized(not minimized)
 end)
 
 UIS.InputBegan:Connect(function(input, processed)
@@ -425,39 +464,19 @@ UIS.InputBegan:Connect(function(input, processed)
     end
 end)
 
--- Permite arrastar a janela pelo cabeçalho
-local draggingWindow = false
-local dragStart, startPosition
-
-header.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
-        draggingWindow = true
-        dragStart = input.Position
-        startPosition = main.Position
+-- Adapt layout to screen width
+local function adapt()
+    local width = gui.AbsoluteSize.X
+    if width < 650 then
+        columns.CellSize = UDim2.new(1, -4, 0, 0)
+    else
+        columns.CellSize = UDim2.new(0.333, -7, 0, 0)
     end
-end)
+    fov.Size = UDim2.fromOffset(cfg.FOV * 2, cfg.FOV * 2)
+    fovStroke.Transparency = cfg.Transparency / 100
+end
 
-UIS.InputChanged:Connect(function(input)
-    if draggingWindow and (
-        input.UserInputType == Enum.UserInputType.MouseMovement
-        or input.UserInputType == Enum.UserInputType.Touch
-    ) then
-        local delta = input.Position - dragStart
-        main.Position = UDim2.new(
-            startPosition.X.Scale,
-            startPosition.X.Offset + delta.X,
-            startPosition.Y.Scale,
-            startPosition.Y.Offset + delta.Y
-        )
-    end
-end)
+gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(adapt)
+task.defer(adapt)
 
-UIS.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
-        draggingWindow = false
-    end
-end)
-
-print("Demon Hub carregado.")
+print("Demon Hub Dark Edition: interface carregada.")
