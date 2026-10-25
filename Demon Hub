@@ -1,256 +1,264 @@
 
--- DEMON HUB | SINGLE SCRIPT
--- Coloque em um LocalScript no Roblox Studio.
+-- DEMON HUB | DARK EDITION
+-- Interface mobile/PC com FOV visual e configurações
+-- Não implementa cheats de aimbot ou ESP.
 
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
-local guiParent = player:WaitForChild("PlayerGui")
+local playerGui = player:WaitForChild("PlayerGui")
 
-local old = guiParent:FindFirstChild("DemonHub")
+local old = playerGui:FindFirstChild("DemonHub")
 if old then old:Destroy() end
 
-local S = {
-    ESP = false,
-    NameTag = true,
-    HealthBar = true,
-    Distance = true,
-    Aimbot = false,
-    ShowFOV = true,
-    NPCESP = false,
-    MaxDistance = 1200,
+local settings = {
+    Aimbot = true,
+    PlayerESP = true,
+    NPCESP = true,
+    NameESP = true,
+    HealthESP = true,
+    DistanceESP = true,
+    NoGlass = true,
+    Fullbright = true,
     FOV = 120,
     Smoothness = 5,
-    FOVTransparency = 50,
+    Transparency = 50,
+    ESPDistance = 1200,
+    TextSize = 11,
 }
 
-local RED = Color3.fromRGB(255, 25, 65)
-local BG = Color3.fromRGB(12, 12, 16)
-local ROW = Color3.fromRGB(28, 28, 35)
-local WHITE = Color3.fromRGB(245, 245, 250)
+local RED = Color3.fromRGB(255, 20, 65)
+local DARK = Color3.fromRGB(10, 10, 14)
+local PANEL = Color3.fromRGB(18, 18, 24)
+local WHITE = Color3.fromRGB(240, 240, 248)
+local MUTED = Color3.fromRGB(155, 155, 170)
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "DemonHub"
 gui.ResetOnSpawn = false
 gui.DisplayOrder = 100
-gui.Parent = guiParent
+gui.Parent = playerGui
 
 local main = Instance.new("Frame")
 main.Name = "Main"
-main.Size = UDim2.new(0, 390, 0, 490)
-main.Position = UDim2.new(0.5, -195, 0.5, -245)
-main.BackgroundColor3 = BG
+main.Size = UDim2.new(0.88, 0, 0.76, 0)
+main.Position = UDim2.new(0.06, 0, 0.12, 0)
+main.BackgroundColor3 = DARK
 main.BorderSizePixel = 0
-main.Active = true
 main.Parent = gui
 
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
+local mainLimit = Instance.new("UISizeConstraint")
+mainLimit.MinSize = Vector2.new(300, 350)
+mainLimit.MaxSize = Vector2.new(900, 650)
+mainLimit.Parent = main
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 12)
+mainCorner.Parent = main
 
 local outline = Instance.new("UIStroke")
 outline.Color = RED
 outline.Thickness = 1.5
 outline.Parent = main
 
-local scale = Instance.new("UIScale")
-scale.Scale = 1
-scale.Parent = main
-
-local function button(parent, text, size, position)
-    local b = Instance.new("TextButton")
-    b.Size = size
-    b.Position = position
-    b.BackgroundColor3 = ROW
-    b.TextColor3 = WHITE
-    b.Text = text
-    b.TextSize = 13
-    b.Font = Enum.Font.Gotham
-    b.BorderSizePixel = 0
-    b.AutoButtonColor = true
-    b.Parent = parent
-    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
-    return b
-end
+-- Cabeçalho
+local header = Instance.new("Frame")
+header.Size = UDim2.new(1, 0, 0, 62)
+header.BackgroundColor3 = PANEL
+header.BorderSizePixel = 0
+header.Parent = main
 
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -100, 0, 55)
-title.Position = UDim2.fromOffset(15, 0)
+title.Size = UDim2.new(1, -110, 1, 0)
+title.Position = UDim2.new(0, 14, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "🔥 DEMON HUB"
+title.Text = "👹 DEMON HUB"
 title.TextColor3 = RED
-title.Font = Enum.Font.GothamBold
-title.TextSize = 23
+title.Font = Enum.Font.GothamBlack
+title.TextSize = 22
 title.TextXAlignment = Enum.TextXAlignment.Left
-title.Parent = main
+title.Parent = header
 
-local minimize = button(
-    main, "—", UDim2.fromOffset(32, 30),
-    UDim2.new(1, -75, 0, 12)
-)
+local close = Instance.new("TextButton")
+close.Size = UDim2.new(0, 38, 0, 38)
+close.Position = UDim2.new(1, -48, 0, 12)
+close.BackgroundColor3 = Color3.fromRGB(45, 12, 22)
+close.Text = "×"
+close.TextColor3 = RED
+close.TextSize = 27
+close.Font = Enum.Font.GothamBold
+close.Parent = header
+Instance.new("UICorner", close).CornerRadius = UDim.new(0, 8)
 
-local close = button(
-    main, "×", UDim2.fromOffset(32, 30),
-    UDim2.new(1, -38, 0, 12)
-)
-
-local reopen = button(
-    gui, "🔥 DEMON", UDim2.fromOffset(110, 42),
-    UDim2.new(0, 12, 0.5, 0)
-)
-reopen.BackgroundColor3 = RED
-reopen.Visible = false
-
-minimize.Activated:Connect(function()
-    main.Visible = false
-    reopen.Visible = true
-end)
-
-reopen.Activated:Connect(function()
-    main.Visible = true
-    reopen.Visible = false
-end)
-
-close.Activated:Connect(function()
-    gui:Destroy()
-end)
-
-UIS.InputBegan:Connect(function(input, processed)
-    if not processed and input.KeyCode == Enum.KeyCode.RightShift then
-        main.Visible = not main.Visible
-        reopen.Visible = not main.Visible
-    end
-end)
-
--- Cabeçalho das abas
-local tabBar = Instance.new("Frame")
-tabBar.Position = UDim2.fromOffset(10, 60)
-tabBar.Size = UDim2.new(1, -20, 0, 35)
-tabBar.BackgroundTransparency = 1
-tabBar.Parent = main
+-- Abas
+local tabs = Instance.new("Frame")
+tabs.Position = UDim2.new(0, 10, 0, 70)
+tabs.Size = UDim2.new(1, -20, 0, 38)
+tabs.BackgroundTransparency = 1
+tabs.Parent = main
 
 local tabLayout = Instance.new("UIListLayout")
 tabLayout.FillDirection = Enum.FillDirection.Horizontal
+tabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 tabLayout.Padding = UDim.new(0, 6)
-tabLayout.Parent = tabBar
+tabLayout.Parent = tabs
 
-local content = Instance.new("Frame")
-content.Position = UDim2.fromOffset(10, 103)
-content.Size = UDim2.new(1, -20, 1, -113)
-content.BackgroundTransparency = 1
+local content = Instance.new("ScrollingFrame")
+content.Position = UDim2.new(0, 10, 0, 116)
+content.Size = UDim2.new(1, -20, 1, -126)
+content.BackgroundColor3 = PANEL
+content.BorderSizePixel = 0
+content.ScrollBarThickness = 4
+content.ScrollBarImageColor3 = RED
+content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+content.CanvasSize = UDim2.new()
 content.Parent = main
+Instance.new("UICorner", content).CornerRadius = UDim.new(0, 8)
 
-local pages, tabButtons, refresh = {}, {}, {}
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0, 6)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Parent = content
 
-local function newPage(name)
-    local page = Instance.new("ScrollingFrame")
+local padding = Instance.new("UIPadding")
+padding.PaddingTop = UDim.new(0, 8)
+padding.PaddingLeft = UDim.new(0, 8)
+padding.PaddingRight = UDim.new(0, 8)
+padding.PaddingBottom = UDim.new(0, 8)
+padding.Parent = content
+
+local pages = {}
+local currentPage
+
+local function createPage(name)
+    local page = Instance.new("Frame")
     page.Name = name
-    page.Size = UDim2.fromScale(1, 1)
-    page.BackgroundColor3 = Color3.fromRGB(19, 19, 24)
-    page.BorderSizePixel = 0
-    page.ScrollBarThickness = 4
-    page.ScrollBarImageColor3 = RED
-    page.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    page.CanvasSize = UDim2.new()
+    page.Size = UDim2.new(1, 0, 0, 0)
+    page.AutomaticSize = Enum.AutomaticSize.Y
+    page.BackgroundTransparency = 1
     page.Visible = false
     page.Parent = content
 
-    Instance.new("UICorner", page).CornerRadius = UDim.new(0, 7)
-
-    local padding = Instance.new("UIPadding")
-    padding.PaddingTop = UDim.new(0, 8)
-    padding.PaddingLeft = UDim.new(0, 8)
-    padding.PaddingRight = UDim.new(0, 8)
-    padding.Parent = page
-
-    local layout = Instance.new("UIListLayout")
-    layout.Padding = UDim.new(0, 6)
-    layout.Parent = page
+    local list = Instance.new("UIListLayout")
+    list.Padding = UDim.new(0, 6)
+    list.SortOrder = Enum.SortOrder.LayoutOrder
+    list.Parent = page
 
     pages[name] = page
     return page
 end
 
-local function showPage(name)
+local function switchTab(name)
+    currentPage = name
     for n, page in pairs(pages) do
         page.Visible = n == name
     end
-    for n, b in pairs(tabButtons) do
-        b.BackgroundColor3 = n == name
-            and Color3.fromRGB(100, 15, 35) or ROW
-    end
 end
 
-for _, name in ipairs({"Aimbot", "ESP", "Settings"}) do
-    local b = button(
-        tabBar, name, UDim2.new(1/3, -5, 1, 0), UDim2.new()
-    )
-    tabButtons[name] = b
-    b.Activated:Connect(function()
-        showPage(name)
+local function makeTab(name)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0, 95, 1, 0)
+    button.BackgroundColor3 = PANEL
+    button.Text = name
+    button.TextColor3 = WHITE
+    button.TextSize = 13
+    button.Font = Enum.Font.GothamBold
+    button.Parent = tabs
+    Instance.new("UICorner", button).CornerRadius = UDim.new(0, 6)
+
+    button.Activated:Connect(function()
+        switchTab(name)
     end)
 end
 
-local aimPage = newPage("Aimbot")
-local espPage = newPage("ESP")
-local settingsPage = newPage("Settings")
-
-local function section(page, text)
+local function section(page, name)
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, -4, 0, 26)
-    label.BackgroundTransparency = 1
-    label.Text = text
+    label.Size = UDim2.new(1, 0, 0, 30)
+    label.BackgroundColor3 = Color3.fromRGB(35, 12, 21)
+    label.Text = "  " .. name
     label.TextColor3 = RED
-    label.TextSize = 15
+    label.TextSize = 14
     label.Font = Enum.Font.GothamBold
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = page
+    Instance.new("UICorner", label).CornerRadius = UDim.new(0, 5)
 end
 
-local function addToggle(page, key, label)
-    local b = button(
-        page, "", UDim2.new(1, -4, 0, 34), UDim2.new()
-    )
-    b.TextXAlignment = Enum.TextXAlignment.Left
+local function toggle(page, labelText, key)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, 0, 0, 38)
+    button.BackgroundColor3 = DARK
+    button.Text = ""
+    button.Parent = page
+    Instance.new("UICorner", button).CornerRadius = UDim.new(0, 5)
 
-    local function draw()
-        b.Text = (S[key] and "  [ON]   " or "  [OFF]  ") .. label
-        b.BackgroundColor3 = S[key]
-            and Color3.fromRGB(75, 13, 30) or ROW
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -65, 1, 0)
+    label.Position = UDim2.new(0, 10, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = labelText
+    label.TextColor3 = WHITE
+    label.TextSize = 13
+    label.Font = Enum.Font.Gotham
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = button
+
+    local state = Instance.new("TextLabel")
+    state.Size = UDim2.new(0, 42, 0, 23)
+    state.Position = UDim2.new(1, -50, 0.5, -11)
+    state.BorderSizePixel = 0
+    state.Text = ""
+    state.Parent = button
+    Instance.new("UICorner", state).CornerRadius = UDim.new(1, 0)
+
+    local dot = Instance.new("Frame")
+    dot.Size = UDim2.new(0, 17, 0, 17)
+    dot.Position = UDim2.new(0, 3, 0.5, -8)
+    dot.BackgroundColor3 = WHITE
+    dot.Parent = state
+    Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
+
+    local function update()
+        state.BackgroundColor3 =
+            settings[key] and RED or Color3.fromRGB(55, 55, 68)
+        dot.Position = settings[key]
+            and UDim2.new(1, -20, 0.5, -8)
+            or UDim2.new(0, 3, 0.5, -8)
     end
 
-    b.Activated:Connect(function()
-        S[key] = not S[key]
-        draw()
+    button.Activated:Connect(function()
+        settings[key] = not settings[key]
+        update()
     end)
 
-    refresh[key] = draw
-    draw()
+    update()
 end
 
-local function addSlider(page, key, label, min, max)
-    local holder = Instance.new("Frame")
-    holder.Size = UDim2.new(1, -4, 0, 58)
-    holder.BackgroundColor3 = ROW
-    holder.BorderSizePixel = 0
-    holder.Parent = page
-    Instance.new("UICorner", holder).CornerRadius = UDim.new(0, 6)
+local function slider(page, labelText, key, minimum, maximum)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 0, 62)
+    frame.BackgroundColor3 = DARK
+    frame.Parent = page
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 5)
 
-    local caption = Instance.new("TextLabel")
-    caption.Position = UDim2.fromOffset(8, 2)
-    caption.Size = UDim2.new(1, -16, 0, 22)
-    caption.BackgroundTransparency = 1
-    caption.TextColor3 = WHITE
-    caption.TextSize = 12
-    caption.Font = Enum.Font.Gotham
-    caption.TextXAlignment = Enum.TextXAlignment.Left
-    caption.Parent = holder
+    local label = Instance.new("TextLabel")
+    label.Position = UDim2.new(0, 9, 0, 3)
+    label.Size = UDim2.new(1, -18, 0, 23)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = WHITE
+    label.TextSize = 13
+    label.Font = Enum.Font.Gotham
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = frame
 
     local track = Instance.new("TextButton")
-    track.Position = UDim2.fromOffset(8, 34)
-    track.Size = UDim2.new(1, -16, 0, 12)
-    track.BackgroundColor3 = Color3.fromRGB(60, 40, 46)
+    track.Position = UDim2.new(0, 10, 0, 36)
+    track.Size = UDim2.new(1, -20, 0, 14)
+    track.BackgroundColor3 = Color3.fromRGB(55, 35, 43)
     track.Text = ""
-    track.Parent = holder
+    track.Parent = frame
     Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
 
     local fill = Instance.new("Frame")
@@ -259,32 +267,28 @@ local function addSlider(page, key, label, min, max)
     fill.Parent = track
     Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
 
-    local function draw()
-        local ratio = (S[key] - min) / (max - min)
-        fill.Size = UDim2.new(ratio, 0, 1, 0)
-        caption.Text = label .. ": " .. tostring(S[key])
-    end
-
     local dragging = false
 
-    local function setFromX(x)
-        local width = math.max(track.AbsoluteSize.X, 1)
+    local function setValue(x)
         local ratio = math.clamp(
-            (x - track.AbsolutePosition.X) / width, 0, 1
+            (x - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1
         )
-        S[key] = math.floor(min + ratio * (max - min) + 0.5)
-        draw()
+        settings[key] = math.floor(minimum + ratio * (maximum - minimum) + 0.5)
+        fill.Size = UDim2.new(ratio, 0, 1, 0)
+        label.Text = labelText .. ": " .. settings[key]
     end
 
-    track.Activated:Connect(function()
-        setFromX(UIS:GetMouseLocation().X)
-    end)
+    local function update()
+        local ratio = (settings[key] - minimum) / (maximum - minimum)
+        fill.Size = UDim2.new(ratio, 0, 1, 0)
+        label.Text = labelText .. ": " .. settings[key]
+    end
 
     track.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
             or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
-            setFromX(input.Position.X)
+            setValue(input.Position.X)
         end
     end)
 
@@ -293,7 +297,7 @@ local function addSlider(page, key, label, min, max)
             input.UserInputType == Enum.UserInputType.MouseMovement
             or input.UserInputType == Enum.UserInputType.Touch
         ) then
-            setFromX(input.Position.X)
+            setValue(input.Position.X)
         end
     end)
 
@@ -304,121 +308,156 @@ local function addSlider(page, key, label, min, max)
         end
     end)
 
-    refresh[key] = draw
-    draw()
+    update()
 end
 
-section(aimPage, "AIMBOT")
-addToggle(aimPage, "Aimbot", "Aim Assist")
-addSlider(aimPage, "FOV", "FOV", 10, 300)
-addSlider(aimPage, "Smoothness", "Smoothness", 1, 20)
+-- Páginas e controles
+local aim = createPage("Aimbot")
+local esp = createPage("ESP")
+local visual = createPage("Visual")
+local config = createPage("Settings")
 
-section(espPage, "PLAYER ESP")
-addToggle(espPage, "ESP", "Player ESP")
-addToggle(espPage, "NameTag", "NameTag ESP")
-addToggle(espPage, "HealthBar", "Health Bar ESP")
-addToggle(espPage, "Distance", "Distance ESP")
-addSlider(espPage, "MaxDistance", "Max Distance (studs)", 100, 1200)
+makeTab("Aimbot")
+makeTab("ESP")
+makeTab("Visual")
+makeTab("Settings")
 
-section(espPage, "NPC ESP")
-addToggle(espPage, "NPCESP", "NPC ESP")
+section(aim, "FOV VISUAL")
+slider(aim, "FOV Size", "FOV", 30, 300)
+slider(aim, "FOV Transparency", "Transparency", 0, 100)
+section(aim, "AIM SETTINGS")
+toggle(aim, "Aimbot (visual setting only)", "Aimbot")
+slider(aim, "Smoothness", "Smoothness", 1, 20)
 
-section(settingsPage, "VISUAL SETTINGS")
-addToggle(settingsPage, "ShowFOV", "Show FOV")
-addSlider(settingsPage, "FOVTransparency", "FOV Transparency", 0, 100)
+section(esp, "PLAYER ESP SETTINGS")
+toggle(esp, "Player ESP (setting only)", "PlayerESP")
+toggle(esp, "Name Tags", "NameESP")
+toggle(esp, "Health Bar", "HealthESP")
+toggle(esp, "Distance", "DistanceESP")
+slider(esp, "Max Distance", "ESPDistance", 100, 1200)
 
-section(settingsPage, "CONFIG")
+section(esp, "NPC ESP SETTINGS")
+toggle(esp, "NPC ESP (setting only)", "NPCESP")
 
-local nameBox = Instance.new("TextBox")
-nameBox.Size = UDim2.new(1, -4, 0, 34)
-nameBox.BackgroundColor3 = ROW
-nameBox.TextColor3 = WHITE
-nameBox.PlaceholderText = "Enter Config Name"
-nameBox.Text = ""
-nameBox.ClearTextOnFocus = false
-nameBox.Font = Enum.Font.Gotham
-nameBox.TextSize = 13
-nameBox.Parent = settingsPage
+section(visual, "VISUAL OPTIONS")
+toggle(visual, "No Glass (setting only)", "NoGlass")
+toggle(visual, "Fullbright (setting only)", "Fullbright")
 
-local status = Instance.new("TextLabel")
-status.Size = UDim2.new(1, -4, 0, 24)
-status.BackgroundTransparency = 1
-status.Text = "Ready"
-status.TextColor3 = RED
-status.TextSize = 12
-status.Parent = settingsPage
+section(config, "INTERFACE SETTINGS")
+slider(config, "ESP Text Size", "TextSize", 8, 24)
 
-local function configAction(action)
-    if nameBox.Text == "" then
-        status.Text = "Digite um nome para a config."
-        return
-    end
+local info = Instance.new("TextLabel")
+info.Size = UDim2.new(1, 0, 0, 48)
+info.BackgroundTransparency = 1
+info.TextWrapped = true
+info.Text = "Demon Hub | Configurações visuais da sessão"
+info.TextColor3 = MUTED
+info.TextSize = 12
+info.Font = Enum.Font.Gotham
+info.Parent = config
 
-    status.Text = "Aguarde..."
+switchTab("Aimbot")
 
-    local ok, success, message, data = pcall(function()
-        return remote:InvokeServer(action, nameBox.Text, S)
-    end)
+-- Círculo FOV visual
+local circle = Instance.new("Frame")
+circle.Name = "FOVCircle"
+circle.AnchorPoint = Vector2.new(0.5, 0.5)
+circle.Position = UDim2.new(0.5, 0, 0.5, 0)
+circle.Size = UDim2.new(0, settings.FOV * 2, 0, settings.FOV * 2)
+circle.BackgroundTransparency = 1
+circle.Parent = gui
 
-    if not ok then
-        status.Text = "Configure o script do servidor."
-        return
-    end
+local circleCorner = Instance.new("UICorner")
+circleCorner.CornerRadius = UDim.new(1, 0)
+circleCorner.Parent = circle
 
-    status.Text = message or "Concluído."
+local circleStroke = Instance.new("UIStroke")
+circleStroke.Color = RED
+circleStroke.Thickness = 1.5
+circleStroke.Parent = circle
 
-    if action == "Load" and success and type(data) == "table" then
-        for key, value in pairs(data) do
-            if S[key] ~= nil and type(S[key]) == type(value) then
-                S[key] = value
-            end
-        end
-
-        for _, draw in pairs(refresh) do
-            draw()
-        end
-    end
+local function updateCircle()
+    circle.Size = UDim2.fromOffset(settings.FOV * 2, settings.FOV * 2)
+    circleStroke.Transparency = settings.Transparency / 100
 end
 
-local save = button(
-    settingsPage, "Save Config",
-    UDim2.new(1, -4, 0, 34), UDim2.new()
-)
-save.Activated:Connect(function()
-    configAction("Save")
+RunService.RenderStepped:Connect(updateCircle)
+
+-- Minimizar/reabrir: botão mobile e RightShift no PC
+local minimized = false
+
+local mobileButton = Instance.new("TextButton")
+mobileButton.Name = "DemonMobileButton"
+mobileButton.Size = UDim2.fromOffset(58, 58)
+mobileButton.Position = UDim2.new(1, -75, 0.72, 0)
+mobileButton.BackgroundColor3 = DARK
+mobileButton.Text = "👹"
+mobileButton.TextSize = 27
+mobileButton.Parent = gui
+mobileButton.Visible = UIS.TouchEnabled
+Instance.new("UICorner", mobileButton).CornerRadius = UDim.new(1, 0)
+
+local mobileStroke = Instance.new("UIStroke")
+mobileStroke.Color = RED
+mobileStroke.Thickness = 2
+mobileStroke.Parent = mobileButton
+
+local function setMinimized(value)
+    minimized = value
+    main.Visible = not minimized
+    circle.Visible = not minimized
+    mobileButton.Visible = UIS.TouchEnabled
+        and (minimized or not minimized)
+end
+
+mobileButton.Activated:Connect(function()
+    setMinimized(not minimized)
 end)
 
-local load = button(
-    settingsPage, "Load Config",
-    UDim2.new(1, -4, 0, 34), UDim2.new()
-)
-load.Activated:Connect(function()
-    configAction("Load")
+close.Activated:Connect(function()
+    setMinimized(true)
 end)
 
--- FOV visual
-local fov = Instance.new("Frame")
-fov.Name = "FOVCircle"
-fov.AnchorPoint = Vector2.new(0.5, 0.5)
-fov.Position = UDim2.fromScale(0.5, 0.5)
-fov.Size = UDim2.fromOffset(S.FOV * 2, S.FOV * 2)
-fov.BackgroundTransparency = 1
-fov.Parent = gui
-
-Instance.new("UICorner", fov).CornerRadius = UDim.new(1, 0)
-
-local fovStroke = Instance.new("UIStroke")
-fovStroke.Color = RED
-fovStroke.Thickness = 1.5
-fovStroke.Parent = fov
-
-RunService.RenderStepped:Connect(function()
-    if not gui.Parent then return end
-
-    fov.Visible = S.ShowFOV
-    fov.Size = UDim2.fromOffset(S.FOV * 2, S.FOV * 2)
-    fovStroke.Transparency = S.FOVTransparency / 100
+UIS.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.RightShift and not UIS.TouchEnabled then
+        setMinimized(not minimized)
+    end
 end)
 
-showPage("Aimbot")
+-- Permite arrastar a janela pelo cabeçalho
+local draggingWindow = false
+local dragStart, startPosition
+
+header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        draggingWindow = true
+        dragStart = input.Position
+        startPosition = main.Position
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if draggingWindow and (
+        input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch
+    ) then
+        local delta = input.Position - dragStart
+        main.Position = UDim2.new(
+            startPosition.X.Scale,
+            startPosition.X.Offset + delta.X,
+            startPosition.Y.Scale,
+            startPosition.Y.Offset + delta.Y
+        )
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        draggingWindow = false
+    end
+end)
+
 print("Demon Hub carregado.")
