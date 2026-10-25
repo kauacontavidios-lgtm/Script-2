@@ -1,0 +1,511 @@
+
+-- DEMON HUB | Server | Save / Load Config
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local DataStoreService = game:GetService("DataStoreService")
+
+local store = DataStoreService:GetDataStore("DemonHub_v2")
+
+local remote = ReplicatedStorage:FindFirstChild("DemonHubConfig")
+if not remote then
+    remote = Instance.new("RemoteFunction")
+    remote.Name = "DemonHubConfig"
+    remote.Parent = ReplicatedStorage
+end
+
+local defaults = {
+    ESP = false,
+    NameTag = true,
+    HealthBar = true,
+    Distance = true,
+    Aimbot = false,
+    ShowFOV = true,
+    NPCESP = false,
+    MaxDistance = 1200,
+    FOV = 120,
+    Smoothness = 5,
+    FOVTransparency = 50,
+    ESPTextSize = 11,
+}
+
+local limits = {
+    MaxDistance = {100, 1200},
+    FOV = {10, 300},
+    Smoothness = {1, 20},
+    FOVTransparency = {0, 100},
+    ESPTextSize = {8, 24},
+}
+
+local function sanitize(data)
+    if type(data) ~= "table" then return nil end
+    local result = {}
+
+    for key, default in pairs(defaults) do
+        local value = data[key]
+
+        if type(value) ~= type(default) then
+            value = default
+        end
+
+        if type(value) == "number" then
+            if value ~= value or math.abs(value) == math.huge then
+                value = default
+            end
+            if limits[key] then
+                value = math.clamp(
+                    value, limits[key][1], limits[key][2]
+                )
+            end
+        end
+
+        result[key] = value
+    end
+
+    return result
+end
+
+remote.OnServerInvoke = function(player, action, name, data)
+    if type(name) ~= "string"
+        or #name < 1
+        or #name > 30
+        or not name:match("^[%w _%-]+$") then
+        return false, "Nome inválido."
+    end
+
+    local key = "player_" .. player.UserId .. "_" .. name
+
+    if action == "Save" then
+        local clean = sanitize(data)
+        if not clean then return false, "Config inválida." end
+
+        local ok, err = pcall(function()
+            store:SetAsync(key, clean)
+        end)
+
+        if not ok then
+            warn("Demon Hub save:", err)
+            return false, "Erro ao salvar. Verifique o DataStore."
+        end
+
+        return true, "Config salva!"
+    end
+
+    if action == "Load" then
+        local ok, result = pcall(function()
+            return store:GetAsync(key)
+        end)
+
+        if not ok then return false, "Erro ao carregar." end
+        if not result then return false, "Config não encontrada." end
+
+        return true, "Config carregada!", sanitize(result)
+    end
+
+    return false, "Ação inválida."
+end
+
+-- DEMON HUB | Client UI
+-- Roblox Studio: StarterPlayerScripts > LocalScript
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local remote = ReplicatedStorage:WaitForChild("DemonHubConfig")
+
+local old = playerGui:FindFirstChild("DemonHub")
+if old then old:Destroy() end
+
+local S = {
+    ESP = true,
+    NameTag = true,
+    HealthBar = true,
+    Distance = true,
+    Aimbot = true,
+    ShowFOV = true,
+    NPCESP = true,
+    MaxDistance = 1200,
+    FOV = 120,
+    Smoothness = 5,
+    FOVTransparency = 50,
+    ESPTextSize = 11,
+}
+
+local RED = Color3.fromRGB(255, 25, 65)
+local BG = Color3.fromRGB(9, 9, 12)
+local PANEL = Color3.fromRGB(18, 18, 23)
+local ROW = Color3.fromRGB(27, 27, 33)
+local WHITE = Color3.fromRGB(245, 245, 250)
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "DemonHub"
+gui.ResetOnSpawn = false
+gui.Parent = playerGui
+
+local main = Instance.new("Frame")
+main.Size = UDim2.new(0.92, 0, 0, 550)
+main.Position = UDim2.new(0.04, 0, 0.5, -275)
+main.BackgroundColor3 = BG
+main.BorderSizePixel = 0
+main.Active = true
+main.Parent = gui
+
+local constraint = Instance.new("UISizeConstraint")
+constraint.MaxSize = Vector2.new(1000, 650)
+constraint.MinSize = Vector2.new(290, 400)
+constraint.Parent = main
+
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
+
+local outline = Instance.new("UIStroke")
+outline.Color = RED
+outline.Thickness = 1.5
+outline.Parent = main
+
+local function makeButton(parent, text, size, pos)
+    local b = Instance.new("TextButton")
+    b.Size = size
+    b.Position = pos
+    b.BackgroundColor3 = ROW
+    b.BorderSizePixel = 0
+    b.Text = text
+    b.TextColor3 = WHITE
+    b.TextSize = 14
+    b.Font = Enum.Font.Gotham
+    b.Parent = parent
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+    return b
+end
+
+local header = Instance.new("TextLabel")
+header.Size = UDim2.new(1, -90, 0, 60)
+header.Position = UDim2.fromOffset(15, 0)
+header.BackgroundTransparency = 1
+header.Text = "🔥  DEMON HUB"
+header.TextColor3 = RED
+header.TextSize = 25
+header.Font = Enum.Font.GothamBold
+header.TextXAlignment = Enum.TextXAlignment.Left
+header.Parent = main
+
+local minimize = makeButton(
+    main, "—", UDim2.fromOffset(34, 34),
+    UDim2.new(1, -78, 0, 12)
+)
+
+local close = makeButton(
+    main, "×", UDim2.fromOffset(34, 34),
+    UDim2.new(1, -39, 0, 12)
+)
+
+local reopen = makeButton(
+    gui, "🔥 DEMON", UDim2.fromOffset(115, 44),
+    UDim2.new(0, 12, 0.5, 0)
+)
+reopen.BackgroundColor3 = RED
+reopen.Visible = false
+
+minimize.Activated:Connect(function()
+    main.Visible = false
+    reopen.Visible = true
+end)
+
+reopen.Activated:Connect(function()
+    main.Visible = true
+    reopen.Visible = false
+end)
+
+close.Activated:Connect(function()
+    gui:Destroy()
+end)
+
+UIS.InputBegan:Connect(function(input, processed)
+    if not processed and input.KeyCode == Enum.KeyCode.RightShift then
+        main.Visible = not main.Visible
+        reopen.Visible = not main.Visible
+    end
+end)
+
+-- Abas
+local tabs = Instance.new("Frame")
+tabs.Position = UDim2.fromOffset(10, 65)
+tabs.Size = UDim2.new(1, -20, 0, 38)
+tabs.BackgroundTransparency = 1
+tabs.Parent = main
+
+local tabLayout = Instance.new("UIListLayout")
+tabLayout.FillDirection = Enum.FillDirection.Horizontal
+tabLayout.Padding = UDim.new(0, 6)
+tabLayout.Parent = tabs
+
+local pages = {}
+local tabButtons = {}
+
+local host = Instance.new("Frame")
+host.Position = UDim2.fromOffset(10, 110)
+host.Size = UDim2.new(1, -20, 1, -120)
+host.BackgroundTransparency = 1
+host.Parent = main
+
+local function createPage(name)
+    local page = Instance.new("ScrollingFrame")
+    page.Name = name
+    page.Size = UDim2.fromScale(1, 1)
+    page.BackgroundColor3 = PANEL
+    page.BorderSizePixel = 0
+    page.ScrollBarThickness = 4
+    page.ScrollBarImageColor3 = RED
+    page.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    page.CanvasSize = UDim2.new()
+    page.Visible = false
+    page.Parent = host
+    Instance.new("UICorner", page).CornerRadius = UDim.new(0, 8)
+
+    local padding = Instance.new("UIPadding")
+    padding.PaddingTop = UDim.new(0, 8)
+    padding.PaddingLeft = UDim.new(0, 8)
+    padding.PaddingRight = UDim.new(0, 8)
+    padding.PaddingBottom = UDim.new(0, 8)
+    padding.Parent = page
+
+    local layout = Instance.new("UIListLayout")
+    layout.Padding = UDim.new(0, 5)
+    layout.Parent = page
+
+    pages[name] = page
+    return page
+end
+
+local function switchTab(name)
+    for n, page in pairs(pages) do
+        page.Visible = n == name
+    end
+    for n, b in pairs(tabButtons) do
+        b.BackgroundColor3 = n == name and Color3.fromRGB(100, 12, 30) or ROW
+    end
+end
+
+for _, name in ipairs({"Aimbot", "ESP", "Settings"}) do
+    local b = makeButton(
+        tabs, name, UDim2.new(1/3, -5, 1, 0), UDim2.new()
+    )
+    tabButtons[name] = b
+    b.Activated:Connect(function()
+        switchTab(name)
+    end)
+end
+
+local aimPage = createPage("Aimbot")
+local espPage = createPage("ESP")
+local settingsPage = createPage("Settings")
+
+local controls = {}
+
+local function addSection(page, title)
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -4, 0, 28)
+    label.BackgroundTransparency = 1
+    label.Text = title
+    label.TextColor3 = RED
+    label.Font = Enum.Font.GothamBold
+    label.TextSize = 17
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = page
+end
+
+local function addToggle(page, key, label)
+    local b = makeButton(
+        page, "", UDim2.new(1, -4, 0, 34), UDim2.new()
+    )
+    b.TextXAlignment = Enum.TextXAlignment.Left
+
+    local function render()
+        b.Text = (S[key] and "  [ON]   " or "  [OFF]  ") .. label
+        b.BackgroundColor3 = S[key] and Color3.fromRGB(85, 12, 30) or ROW
+    end
+
+    b.Activated:Connect(function()
+        S[key] = not S[key]
+        render()
+    end)
+
+    controls[key] = render
+    render()
+end
+
+local function addSlider(page, key, label, min, max)
+    local holder = Instance.new("Frame")
+    holder.Size = UDim2.new(1, -4, 0, 64)
+    holder.BackgroundColor3 = ROW
+    holder.BorderSizePixel = 0
+    holder.Parent = page
+    Instance.new("UICorner", holder).CornerRadius = UDim.new(0, 6)
+
+    local text = Instance.new("TextLabel")
+    text.Position = UDim2.fromOffset(8, 2)
+    text.Size = UDim2.new(1, -16, 0, 22)
+    text.BackgroundTransparency = 1
+    text.TextColor3 = WHITE
+    text.Font = Enum.Font.Gotham
+    text.TextSize = 13
+    text.TextXAlignment = Enum.TextXAlignment.Left
+    text.Parent = holder
+
+    local track = Instance.new("TextButton")
+    track.Position = UDim2.fromOffset(8, 38)
+    track.Size = UDim2.new(1, -16, 0, 12)
+    track.BackgroundColor3 = Color3.fromRGB(55, 35, 43)
+    track.Text = ""
+    track.Parent = holder
+    Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
+
+    local fill = Instance.new("Frame")
+    fill.BackgroundColor3 = RED
+    fill.BorderSizePixel = 0
+    fill.Parent = track
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
+
+    local dragging = false
+
+    local function update(x)
+        local alpha = math.clamp(
+            (x - track.AbsolutePosition.X) /
+            math.max(track.AbsoluteSize.X, 1), 0, 1
+        )
+        S[key] = math.floor(min + alpha * (max - min) + 0.5)
+        fill.Size = UDim2.new((S[key] - min) / (max - min), 0, 1, 0)
+        text.Text = label .. ": " .. S[key]
+    end
+
+    track.Activated:Connect(function()
+        update(UIS:GetMouseLocation().X)
+    end)
+
+    track.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            update(input.Position.X)
+        end
+    end)
+
+    UIS.InputChanged:Connect(function(input)
+        if dragging and (
+            input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch
+        ) then
+            update(input.Position.X)
+        end
+    end)
+
+    UIS.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+
+    controls[key] = function()
+        fill.Size = UDim2.new((S[key] - min) / (max - min), 0, 1, 0)
+        text.Text = label .. ": " .. S[key]
+    end
+
+    controls[key]()
+end
+
+-- AIMBOT: controles de configuração
+addSection(aimPage, "AIMBOT")
+addToggle(aimPage, "Aimbot", "Aim Assist")
+addSlider(aimPage, "FOV", "FOV", 10, 300)
+addSlider(aimPage, "Smoothness", "Smoothness", 1, 20)
+
+-- ESP
+addSection(espPage, "PLAYER ESP")
+addToggle(espPage, "ESP", "Player ESP")
+addToggle(espPage, "NameTag", "NameTag ESP")
+addToggle(espPage, "HealthBar", "Health Bar ESP")
+addToggle(espPage, "Distance", "Distance ESP")
+addSlider(espPage, "MaxDistance", "Max Distance (studs)", 100, 1200)
+addSection(espPage, "NPC ESP")
+addToggle(espPage, "NPCESP", "NPC ESP")
+
+-- SETTINGS
+addSection(settingsPage, "VISUAL SETTINGS")
+addToggle(settingsPage, "ShowFOV", "Show FOV")
+addSlider(settingsPage, "FOVTransparency", "FOV Transparency", 0, 100)
+addSlider(settingsPage, "ESPTextSize", "ESP Text Size", 8, 24)
+
+addSection(settingsPage, "CONFIG")
+
+local configName = Instance.new("TextBox")
+configName.Size = UDim2.new(1, -4, 0, 32)
+configName.BackgroundColor3 = ROW
+configName.TextColor3 = WHITE
+configName.PlaceholderText = "Enter Config Name"
+configName.Text = ""
+configName.ClearTextOnFocus = false
+configName.Font = Enum.Font.Gotham
+configName.TextSize = 13
+configName.Parent = settingsPage
+
+local status = Instance.new("TextLabel")
+status.Size = UDim2.new(1, -4, 0, 24)
+status.BackgroundTransparency = 1
+status.Text = "Ready"
+status.TextColor3 = RED
+status.TextSize = 12
+status.Parent = settingsPage
+
+local function configAction(action)
+    if configName.Text == "" then
+        status.Text = "Digite o nome da config."
+        return
+    end
+
+    status.Text = "Aguarde..."
+
+    local ok, success, message, data = pcall(function()
+        return remote:InvokeServer(action, configName.Text, S)
+    end)
+
+    if not ok then
+        status.Text = "Erro de conexão."
+        return
+    end
+
+    status.Text = message or "Concluído."
+
+    if action == "Load" and success and type(data) == "table" then
+        for key, value in pairs(data) do
+            if S[key] ~= nil and type(S[key]) == type(value) then
+                S[key] = value
+            end
+        end
+
+        for _, render in pairs(controls) do
+            render()
+        end
+    end
+end
+
+local save = makeButton(
+    settingsPage, "Save Config",
+    UDim2.new(1, -4, 0, 32), UDim2.new()
+)
+save.Activated:Connect(function()
+    configAction("Save")
+end)
+
+local load = makeButton(
+    settingsPage, "Load Config",
+    UDim2.new(1, -4, 0, 32), UDim2.new()
+)
+load.Activated:Connect(function()
+    configAction("Load")
+end)
+
+switchTab("Aimbot")
+
+print("Demon Hub: interface carregada.")
